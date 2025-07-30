@@ -15,7 +15,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-MODEL_NAME = "cnn_4"
+MODEL_NAME = "cnn_4_1"
 MODEL_PATH = os.path.join(MODEL_DIR, f"{MODEL_NAME}.pth")
 
 epochs = 30
@@ -75,7 +75,13 @@ valid_transform = transforms.Compose([
 """
 # датасет скачивается в папку data текущего проекта
 train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transform)
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=100, shuffle=True)
+# разбиваем на тренировочную и валидационную части в соотношении 80 /20
+train_size = int(0.8 * len(train_dataset))  
+val_size = len(train_dataset) - train_size  
+train_subset, val_subset = random_split(train_dataset, [train_size, val_size])
+
+train_loader = torch.utils.data.DataLoader(train_subset, batch_size=100, shuffle=True)
+valid_loader = torch.utils.data.DataLoader(val_subset, batch_size=100, shuffle=True)
 
 test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=valid_transform)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100, shuffle=False)
@@ -178,7 +184,7 @@ for epoch in range(epochs):
     valid_acc = 0.0
     valid_loss = 0.0
     model.eval()
-    for images, labels in tqdm(test_loader):
+    for images, labels in tqdm(valid_loader):
         images = images.to(device)
         labels = labels.to(device)
 
